@@ -5,13 +5,11 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ChatListener implements Runnable {
-    private String name;
     private BufferedReader chatIn;
     private PrintWriter chatOut;
     private ChatClient client;
 
     public ChatListener(Socket s, ChatClient client, String name){
-        this.name = name;
         this.client = client;
         try{
             chatIn = new BufferedReader(new InputStreamReader(s.getInputStream()));
@@ -21,18 +19,19 @@ public class ChatListener implements Runnable {
         }
     }
     public void run() {
-        String messageIn;
-        try {
-            messageIn = chatIn.readLine();
-        } catch(Exception e){
-            messageIn = e.getMessage();
+        while(true) {
+            String messageIn;
+            try {
+                messageIn = chatIn.readLine();
+            } catch (Exception e) {
+                messageIn = e.getMessage();
+            }
+            client.addMessage(messageIn + "\r\n");
         }
-        client.addMessage(messageIn + "\r\n");
     }
     public boolean sendMessage(String message){
         try{
-            System.out.println("ChatListener: " + message);
-            chatOut.print(name + ": " + message +"\r\n");
+            chatOut.println(message);
         } catch (Exception e){
             return false;
         }

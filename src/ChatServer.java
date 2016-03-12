@@ -12,8 +12,10 @@ import java.util.Map;
 public class ChatServer implements Runnable{
     public Socket client;
     private static final int PORT = 1337;
-//    public static ServerSocket serverSocket;
     public static List<PrintWriter> messageOut;
+    private PrintWriter clientOut;
+    private BufferedReader clientIn;
+
     public static void main(String[] args){
         messageOut = new LinkedList<>();
         System.out.print("Starting server on port: " + PORT + "\r\n");
@@ -37,10 +39,6 @@ public class ChatServer implements Runnable{
     }
     public ChatServer(Socket client){
         this.client = client;
-    }
-    public void run(){
-        PrintWriter clientOut;
-        BufferedReader clientIn;
         try {
             clientOut = new PrintWriter(client.getOutputStream(), true);
             clientIn = new BufferedReader(new InputStreamReader(client.getInputStream()));
@@ -49,11 +47,15 @@ public class ChatServer implements Runnable{
             return;
         }
         messageOut.add(clientOut);
+    }
+    public void run(){
         while(true){
             try {
                 System.out.println("Waiting for client...");
                 String msg = clientIn.readLine();
                 System.out.println(msg);
+                if(msg == null)
+                    throw new SocketException("Disconnected");
                 sendMessage(msg);
             } catch (SocketException e){
                 System.out.println("Client disconnected");

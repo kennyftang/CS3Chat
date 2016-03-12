@@ -3,8 +3,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.net.Socket;
 
-//TODO: Add check for valid IP and Port
-//TODO: Create server class and create the client listener thread
 public class ChatClient extends JFrame {
     private JTextField chatInputField;
     private JTextArea chatBoxArea;
@@ -13,8 +11,7 @@ public class ChatClient extends JFrame {
     private String name;
     private ChatListener chatListenerObject;
     private Thread chatListener;
-    private Boolean connected;
-
+    private Socket connection;
     public static void main(String[] args){
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -23,17 +20,6 @@ public class ChatClient extends JFrame {
         }
         ChatClient client = new ChatClient();
         client.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        client.addWindowListener(new WindowListener() {
-            public void windowOpened(WindowEvent e) {            }
-            public void windowClosing(WindowEvent e) {
-                client.end();
-            }
-            public void windowClosed(WindowEvent e) {            }
-            public void windowIconified(WindowEvent e) {            }
-            public void windowDeiconified(WindowEvent e) {            }
-            public void windowActivated(WindowEvent e) {            }
-            public void windowDeactivated(WindowEvent e) {            }
-        });
         client.setSize(400, 300);
         client.setVisible(true);
     }
@@ -119,12 +105,14 @@ public class ChatClient extends JFrame {
         });
         setName.addActionListener((ActionEvent e) -> {
             nameChangeDialog.setSize(400, 80);
+            nameChangeDialog.setLocationRelativeTo(this);
             nameChangeDialog.setVisible(true);
             nameChangeDialog.transferFocusBackward();
         });
         connectItem.addActionListener((ActionEvent e) -> {
             if(connectItem.getText().equals("Connect")) {
                 connectDialog.setSize(400, 80);
+                connectDialog.setLocationRelativeTo(this);
                 connectDialog.setVisible(true);
                 hostField.setText("127.0.0.1");
                 portField.setText("1337");
@@ -156,7 +144,6 @@ public class ChatClient extends JFrame {
             onClickSend();
         });
         connectButton.addActionListener((ActionEvent e) -> {
-            Socket connection;
             try{
                 chatBoxArea.append("Trying on " + hostField.getText() + ":" + portField.getText() + "\r\n");;
                 connectDialog.dispose();
@@ -169,11 +156,11 @@ public class ChatClient extends JFrame {
             } catch (Exception e2){
                 chatBoxArea.append("Failed to connect, invalid IP or port\r\n");
                 connectDialog.dispose();
-                connected = false;
             }
         });
         portField.addActionListener(connectButton.getActionListeners()[0]);
         hostField.addActionListener(connectButton.getActionListeners()[0]);
+        newNameField.addActionListener(changeNameButton.getActionListeners()[0]);
         //End add
         this.pack();
 
@@ -181,21 +168,22 @@ public class ChatClient extends JFrame {
     private void onClickSend(){
         if(chatInputField.getText().isEmpty() || chatListener == null)
             return;
-        chatBoxArea.append(name + ": " + chatInputField.getText() + "\r\n");
-        chatListenerObject.sendMessage(chatInputField.getText());
+        if(!chatListener.isAlive())
+            return;
+        chatListenerObject.sendMessage(name + ": " + chatInputField.getText());
         chatInputField.setText("");
     }
     public void end(){
         try{
-            chatListener.join();
+            chatListener.interrupt();
+            connection.close();
             chatBoxArea.append("Disconnected\r\n");
             connectItem.setText("Connect");
         } catch (Exception e2){
         }
     }
     public void addMessage(String msg){
-        System.out.println("ChatClient: " + msg);
-        if(msg.equals("Connection reset"))
+        if(msg.equals("Connection reset") || msg.equals("Socket closed"))
             end();
         else
             chatBoxArea.append(msg);
