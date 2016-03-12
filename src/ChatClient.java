@@ -1,7 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.IOException;
 import java.net.Socket;
 
 //TODO: Add check for valid IP and Port
@@ -10,6 +9,7 @@ public class ChatClient extends JFrame {
     private JTextField chatInputField;
     private JTextArea chatBoxArea;
     private JButton sendButton;
+    private JMenuItem connectItem;
     private String name;
     private ChatListener chatListenerObject;
     private Thread chatListener;
@@ -23,6 +23,17 @@ public class ChatClient extends JFrame {
         }
         ChatClient client = new ChatClient();
         client.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        client.addWindowListener(new WindowListener() {
+            public void windowOpened(WindowEvent e) {            }
+            public void windowClosing(WindowEvent e) {
+                client.end();
+            }
+            public void windowClosed(WindowEvent e) {            }
+            public void windowIconified(WindowEvent e) {            }
+            public void windowDeiconified(WindowEvent e) {            }
+            public void windowActivated(WindowEvent e) {            }
+            public void windowDeactivated(WindowEvent e) {            }
+        });
         client.setSize(400, 300);
         client.setVisible(true);
     }
@@ -33,7 +44,6 @@ public class ChatClient extends JFrame {
         JMenuItem setName;
         JMenuItem exit;
         JMenuItem font;
-        JMenuItem connectItem;
         JDialog nameChangeDialog;
         JDialog connectDialog;
         JTextField newNameField;
@@ -105,7 +115,7 @@ public class ChatClient extends JFrame {
         //End add
         //Add actionlisteners
         exit.addActionListener((ActionEvent e) -> {
-            this.dispose();
+            System.exit(0);
         });
         setName.addActionListener((ActionEvent e) -> {
             nameChangeDialog.setSize(400, 80);
@@ -113,8 +123,14 @@ public class ChatClient extends JFrame {
             nameChangeDialog.transferFocusBackward();
         });
         connectItem.addActionListener((ActionEvent e) -> {
-            connectDialog.setSize(400, 80);
-            connectDialog.setVisible(true);
+            if(connectItem.getText().equals("Connect")) {
+                connectDialog.setSize(400, 80);
+                connectDialog.setVisible(true);
+                hostField.setText("127.0.0.1");
+                portField.setText("1337");
+            }
+            else
+                end();
         });
         newNameField.addFocusListener(new FocusListener() {
             @Override
@@ -140,38 +156,27 @@ public class ChatClient extends JFrame {
             onClickSend();
         });
         connectButton.addActionListener((ActionEvent e) -> {
-            if(connected == null){
-                connected = false;
-            }
-            if(connected){
-                try{
-                    chatListener.join();
-                    chatBoxArea.append("Disconnected\r\n");
-                } catch (Exception e2){
-                    e2.printStackTrace();
-                }
-            } else {
-                Socket connection;
-                try{
-                    chatBoxArea.append("Trying on " + hostField.getText() + ":" + portField.getText() + "\r\n");;
-                    connection = new Socket(hostField.getText(), Integer.valueOf(portField.getText()));
-                    connectDialog.dispose();
-                    chatBoxArea.append("Connected\r\n");
-                    connected = true;
-                } catch (Exception e2){
-                    chatBoxArea.append("Failed to connect, invalid IP or port\r\n");
-                    connectDialog.dispose();
-                    connected = false;
-                    return;
-                }
-                chatListenerObject = new ChatListener(connection, chatBoxArea, name);
+            Socket connection;
+            try{
+                chatBoxArea.append("Trying on " + hostField.getText() + ":" + portField.getText() + "\r\n");;
+                connectDialog.dispose();
+                connection = new Socket(hostField.getText(), Integer.valueOf(portField.getText()));
+                chatBoxArea.append("Connected\r\n");
+                connectItem.setText("Disconnect");
+                chatListenerObject = new ChatListener(connection, this, name);
                 chatListener = new Thread(chatListenerObject);
                 chatListener.start();
-                connectItem.setText("Disconnect");
+            } catch (Exception e2){
+                chatBoxArea.append("Failed to connect, invalid IP or port\r\n");
+                connectDialog.dispose();
+                connected = false;
             }
         });
+        portField.addActionListener(connectButton.getActionListeners()[0]);
+        hostField.addActionListener(connectButton.getActionListeners()[0]);
         //End add
         this.pack();
+
     }
     private void onClickSend(){
         if(chatInputField.getText().isEmpty() || chatListener == null)
@@ -179,5 +184,20 @@ public class ChatClient extends JFrame {
         chatBoxArea.append(name + ": " + chatInputField.getText() + "\r\n");
         chatListenerObject.sendMessage(chatInputField.getText());
         chatInputField.setText("");
+    }
+    public void end(){
+        try{
+            chatListener.join();
+            chatBoxArea.append("Disconnected\r\n");
+            connectItem.setText("Connect");
+        } catch (Exception e2){
+        }
+    }
+    public void addMessage(String msg){
+        System.out.println("ChatClient: " + msg);
+        if(msg.equals("Connection reset"))
+            end();
+        else
+            chatBoxArea.append(msg);
     }
 }

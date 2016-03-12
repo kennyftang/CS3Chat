@@ -5,17 +5,17 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ChatListener implements Runnable {
-    private JTextArea chatBox;
     private String name;
     private BufferedReader chatIn;
     private PrintWriter chatOut;
+    private ChatClient client;
 
-    public ChatListener(Socket s, JTextArea chatBox, String name){
-        this.chatBox = chatBox;
+    public ChatListener(Socket s, ChatClient client, String name){
         this.name = name;
+        this.client = client;
         try{
             chatIn = new BufferedReader(new InputStreamReader(s.getInputStream()));
-            chatOut = new PrintWriter(s.getOutputStream());
+            chatOut = new PrintWriter(s.getOutputStream(), true);
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -27,11 +27,12 @@ public class ChatListener implements Runnable {
         } catch(Exception e){
             messageIn = e.getMessage();
         }
-        chatBox.append(messageIn + "\r\n");
+        client.addMessage(messageIn + "\r\n");
     }
     public boolean sendMessage(String message){
         try{
-            chatOut.println(name + ": " + message);
+            System.out.println("ChatListener: " + message);
+            chatOut.print(name + ": " + message +"\r\n");
         } catch (Exception e){
             return false;
         }
