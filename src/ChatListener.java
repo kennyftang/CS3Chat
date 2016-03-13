@@ -1,4 +1,3 @@
-import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -9,7 +8,7 @@ public class ChatListener implements Runnable {
     private PrintWriter chatOut;
     private ChatClient client;
 
-    public ChatListener(Socket s, ChatClient client, String name){
+    public ChatListener(Socket s, ChatClient client){
         this.client = client;
         try{
             chatIn = new BufferedReader(new InputStreamReader(s.getInputStream()));
@@ -24,17 +23,19 @@ public class ChatListener implements Runnable {
             try {
                 messageIn = chatIn.readLine();
             } catch (Exception e) {
-                messageIn = e.getMessage();
+                client.addMessage(e.getMessage());
+                break;
             }
-            client.addMessage(messageIn + "\r\n");
+            client.addMessage(messageIn);
         }
     }
-    public boolean sendMessage(String message){
+    public void sendMessage(String message){
+        System.out.println(message);
         try{
             chatOut.println(message);
         } catch (Exception e){
-            return false;
+            e.printStackTrace();
         }
-        return false;
     }
+
 }

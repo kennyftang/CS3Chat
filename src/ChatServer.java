@@ -4,10 +4,8 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 public class ChatServer implements Runnable{
     public Socket client;
@@ -15,48 +13,65 @@ public class ChatServer implements Runnable{
     public static List<PrintWriter> messageOut;
     private PrintWriter clientOut;
     private BufferedReader clientIn;
+    private static List<ChatUser> users;
+    private ChatUser user;
 
     public static void main(String[] args){
         messageOut = new LinkedList<>();
+        users = new LinkedList<>();
         System.out.print("Starting server on port: " + PORT + "\r\n");
         try {
             ServerSocket serverSocket = new ServerSocket(PORT);
             System.out.println("Server started on port: " + PORT);
-            Map<Socket, Thread> clients =  new HashMap<>();
             while(true) {
                 try {
                     Socket client = serverSocket.accept();
-                    clients.put(client, new Thread(new ChatServer(client)));
-                    clients.get(client).start();
+                    ChatUser user = new ChatUser(client.getInetAddress().getHostName(), client.hashCode(), false, client);
+                    user.setClientIO(new Thread(new ChatServer(client, user)));
+                    user.getClientIO().start();
                     System.out.println("Accepted new client at " + client.getInetAddress().getHostAddress());
+                    users.add(user);
                 } catch (Exception e){
-
+                    e.printStackTrace();
+                    break;
                 }
             }
         } catch (Exception e){
             e.printStackTrace();
         }
     }
-    public ChatServer(Socket client){
+    public ChatServer(Socket client, ChatUser user){
         this.client = client;
+        this.user = user;
         try {
             clientOut = new PrintWriter(client.getOutputStream(), true);
             clientIn = new BufferedReader(new InputStreamReader(client.getInputStream()));
+            messageOut.add(clientOut);
+            clientOut.println("GET NAME");
+            user.setName(clientIn.readLine());
+            System.out.println("Name: " + user.getName());
         } catch (Exception e){
             e.printStackTrace();
-            return;
         }
-        messageOut.add(clientOut);
     }
     public void run(){
         while(true){
             try {
                 System.out.println("Waiting for client...");
                 String msg = clientIn.readLine();
-                System.out.println(msg);
                 if(msg == null)
                     throw new SocketException("Disconnected");
-                sendMessage(msg);
+                if(msg.matches("^>.*")) {
+                    sendMessage(msg.substring(1));
+                    continue;
+                }
+                System.out.println("Server command issued: " + msg);
+                String[] command = msg.split(" ");
+                switch (command[0]){
+                    case "NEWNAME":
+                        System.out.println("User " + user.getName() + " changed names to: " + command[1]);
+                        user.setName(command[1]);
+                }
             } catch (SocketException e){
                 System.out.println("Client disconnected");
                 return;
@@ -65,8 +80,8 @@ public class ChatServer implements Runnable{
             }
         }
     }
-    public static void sendMessage(String message){
+    public void sendMessage(String message){
         for(PrintWriter x : messageOut)
-            x.println(message);
+            x.println(user.getName() + ": " + message);
     }
 }
