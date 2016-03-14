@@ -37,5 +37,4 @@ public class ChatListener implements Runnable {
             e.printStackTrace();
         }
     }
-
 }

@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -67,10 +68,30 @@ public class ChatServer implements Runnable{
                 }
                 System.out.println("Server command issued: " + msg);
                 String[] command = msg.split(" ");
+                List<String> names = new ArrayList<>();
+                int selfIndex;
+                for(int i = 0; i < users.size(); i++) {
+                    if (users.get(i).equals(user))
+                        selfIndex = i;
+                    else
+                        names.add(users.get(i).getName());
+                }
+                //PM KICK LIST OP
                 switch (command[0]){
                     case "NEWNAME":
-                        System.out.println("User " + user.getName() + " changed names to: " + command[1]);
-                        user.setName(command[1]);
+                        String newName = command[1];
+                        while(names.contains(newName)) {
+                            if (newName.matches(".* \\([1-9]\\)$")) {
+                                newName = newName.substring(0, newName.length() - 1) + Integer.valueOf(newName.charAt(newName.length() - 1) + 1 + ")");
+                            } else
+                                newName += "(1)";
+                        }
+                        clientOut.println("NAMETAKENSUB " + newName);
+                        user.setName(newName);
+                        System.out.println("User " + user.getName() + " changed names to " + command[1]);
+                        break;
+                    case "PM":
+
                 }
             } catch (SocketException e){
                 System.out.println("Client disconnected");

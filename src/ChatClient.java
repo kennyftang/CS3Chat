@@ -166,13 +166,12 @@ public class ChatClient extends JFrame {
             chatListenerObject = new ChatListener(connection, this);
             chatListener = new Thread(chatListenerObject);
             chatListener.start();
-        } catch (Exception e2){
+        } catch (Exception e){
             addInfoMessage("Failed to connect, invalid IP or port");
         }
     }
     private void onClickSend(){
         String text = chatInputField.getText();
-        //System.out.println(text + " " + text.matches("^\\" + "/clear"));
         for(String command : commands)
             if(text.matches("^\\" + command + " .*") || (text.split(" ").length == 1 && text.matches("^\\" + command))) {
                 chatInputField.setText("");
@@ -220,16 +219,32 @@ public class ChatClient extends JFrame {
                 end();
                 break;
             case "/msg":
-
+                if(args.length != 3) {
+                    addInfoMessage("Usage: /msg <user> <message>");
+                    return;
+                }
+                chatListenerObject.sendMessage("PM " + args[1] + " " + args[2]);
                 break;
             case "/kick":
-
+                if(args.length != 2 && args.length != 3) {
+                    addInfoMessage("Usage: /kick <user> [reason]");
+                    return;
+                }
+                chatListenerObject.sendMessage("KICK " + args[1] + (args.length == 3 ? " " + args[2] : ""));
                 break;
             case "/users":
-
+                if(args.length != 1){
+                    addInfoMessage("Usage: /users");
+                    return;
+                }
+                chatListenerObject.sendMessage("LIST");
                 break;
             case "/op":
-
+                if(args.length != 2){
+                    addInfoMessage("Usage: /op <user>");
+                    return;
+                }
+                chatListenerObject.sendMessage("OP " + args[1]);
                 break;
             case "/clear":
                 chatBoxArea.setText("");

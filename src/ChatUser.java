@@ -44,4 +44,12 @@ public class ChatUser {
     public void setClientIO(Thread clientIO){
         this.clientIO = clientIO;
     }
+    @Override
+    public boolean equals(Object o){
+        if(!o.getClass().getName().equals(this.getClass().getName()))
+            return false;
+        else if (((ChatUser)o).getId() == this.getId())
+            return true;
+        return false;
+    }
 }
