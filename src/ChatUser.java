@@ -1,3 +1,4 @@
+import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ChatUser {
@@ -6,6 +7,7 @@ public class ChatUser {
     private boolean op;
     private Socket connection;
     private Thread clientIO;
+    private PrintWriter clientOut;
 
     public ChatUser(String name, int id, boolean op, Socket connection) {
         this.name = name;
@@ -41,6 +43,15 @@ public class ChatUser {
     public Thread getClientIO() {
         return clientIO;
     }
+
+    public PrintWriter getClientOut() {
+        return clientOut;
+    }
+
+    public void setClientOut(PrintWriter clientOut) {
+        this.clientOut = clientOut;
+    }
+
     public void setClientIO(Thread clientIO){
         this.clientIO = clientIO;
     }
@@ -51,5 +62,10 @@ public class ChatUser {
         else if (((ChatUser)o).getId() == this.getId())
             return true;
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return this.getName();
     }
 }

@@ -30,7 +30,6 @@ public class ChatListener implements Runnable {
         }
     }
     public void sendMessage(String message){
-        System.out.println(message);
         try{
             chatOut.println(message);
         } catch (Exception e){

@@ -1,16 +1,13 @@
 import javax.swing.*;
-import javax.swing.text.DefaultCaret;
+import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.Socket;
-import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.ListIterator;
 
-//TODO: Commands for client and server
 
-//TODO: /help, /name, /connect, /msg, /kick, /users, /op, /clear
-//TODO: Add ChatUser class
-//TODO: Add ID for users, check for duplicate names
-//TODO: Add message class
+//TODO: History
 
 public class ChatClient extends JFrame {
     private JTextField chatInputField;
@@ -22,7 +19,11 @@ public class ChatClient extends JFrame {
     private Thread chatListener;
     private Socket connection;
     private String[] commands;
+    private java.util.List<String> history;
+    private int curHistory;
+
     public static void main(String[] args){
+        System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e){
@@ -35,12 +36,11 @@ public class ChatClient extends JFrame {
     }
     public ChatClient(){
         //Define components
-        commands = new String[] {"/help", "/name", "/connect", "/disconnect", "/msg", "/kick", "/users", "/op", "/clear", "/crash"};
+        commands = new String[] {"/help", "/name", "/connect", "/disconnect", "/msg", "/kick", "/users", "/op", "/deop", "/clear", "/crash", "/giveop"};
         JMenuBar menuBar = new JMenuBar();
         JMenu menu = new JMenu("Menu");
         JMenuItem setName = new JMenuItem("Change Name");
         JMenuItem exit = new JMenuItem("Exit");
-        JMenuItem font = new JMenuItem("Change Font");
         connectItem = new JMenuItem("Connect");
         JDialog nameChangeDialog = new JDialog(this);
         JDialog connectDialog = new JDialog(this);
@@ -56,6 +56,9 @@ public class ChatClient extends JFrame {
         JPanel inputButtons = new JPanel();
         JScrollPane textAreaScroller = new JScrollPane(chatBoxArea);
         name = "ChatClient";
+        history = new LinkedList<>();
+        curHistory = 0;
+        history.add("");
         //End Definitions
 
         //Set properties
@@ -86,7 +89,6 @@ public class ChatClient extends JFrame {
         this.setJMenuBar(menuBar);
         menu.add(connectItem);
         menu.add(setName);
-        menu.add(font);
         menu.addSeparator();
         menu.add(exit);
         inputButtons.add(chatInputField); //Adds the text field to the panel
@@ -142,6 +144,18 @@ public class ChatClient extends JFrame {
             setUserName(newNameField.getText());
             nameChangeDialog.dispose();
         });
+        chatInputField.addKeyListener(new KeyListener() {
+            public void keyTyped(KeyEvent e) {}
+            public void keyPressed(KeyEvent e) {}
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if(e.getExtendedKeyCode() == KeyEvent.VK_UP){
+                    chatInputField.setText(getHistory(true));
+                } else if (e.getExtendedKeyCode() == KeyEvent.VK_DOWN){
+                    chatInputField.setText(getHistory(false));
+                }
+            }
+        });
         exit.addActionListener((ActionEvent e) -> System.exit(0));
         sendButton.addActionListener((ActionEvent e) -> onClickSend());
         chatInputField.addActionListener((ActionEvent e) -> onClickSend());
@@ -172,12 +186,19 @@ public class ChatClient extends JFrame {
     }
     private void onClickSend(){
         String text = chatInputField.getText();
+        history.add(text);
+        curHistory++;
         for(String command : commands)
             if(text.matches("^\\" + command + " .*") || (text.split(" ").length == 1 && text.matches("^\\" + command))) {
                 chatInputField.setText("");
                 doCommand(text);
                 return;
             }
+        if(text.matches("^\\/.*")) {
+            addInfoMessage("Invalid command");
+            chatInputField.setText("");
+            return;
+        }
         if(text.isEmpty() || chatListener == null)
             return;
         if(!chatListener.isAlive())
@@ -189,7 +210,7 @@ public class ChatClient extends JFrame {
         String[] args = command.split(" ");
         switch(args[0]){
             case "/help":
-                addInfoMessage("Commands: /help, /name, /connect, /disconnect, /msg, /kick, /users, /op, /clear, /crash");
+                addInfoMessage("Commands: /help, /name, /connect, /disconnect, /msg, /kick, /users, /op, /deop, /clear, /crash, /giveop");
                 break;
             case "/name":
                 if(args.length != 2)
@@ -219,18 +240,20 @@ public class ChatClient extends JFrame {
                 end();
                 break;
             case "/msg":
-                if(args.length != 3) {
+                if(args.length < 3) {
                     addInfoMessage("Usage: /msg <user> <message>");
                     return;
                 }
+                args = command.split("^.*? ");
                 chatListenerObject.sendMessage("PM " + args[1] + " " + args[2]);
                 break;
             case "/kick":
-                if(args.length != 2 && args.length != 3) {
-                    addInfoMessage("Usage: /kick <user> [reason]");
+                if(args.length < 2) {
+                    addInfoMessage("Usage: /kick <user>");
                     return;
                 }
-                chatListenerObject.sendMessage("KICK " + args[1] + (args.length == 3 ? " " + args[2] : ""));
+                args = command.split("^.*? ");
+                chatListenerObject.sendMessage("KICK " + args[1]);
                 break;
             case "/users":
                 if(args.length != 1){
@@ -240,17 +263,42 @@ public class ChatClient extends JFrame {
                 chatListenerObject.sendMessage("LIST");
                 break;
             case "/op":
-                if(args.length != 2){
+                if(args.length < 2){
                     addInfoMessage("Usage: /op <user>");
                     return;
                 }
+                args = command.split("^.*? ");
                 chatListenerObject.sendMessage("OP " + args[1]);
+                break;
+            case "/deop":
+                if(args.length < 2){
+                    addInfoMessage("Usage: /deop <user>");
+                    return;
+                }
+                args = command.split("^.*? ");
+                chatListenerObject.sendMessage("DEOP " + args[1]);
                 break;
             case "/clear":
                 chatBoxArea.setText("");
+                break;
+            case "/crash":
+                if(args.length < 2){
+                    addInfoMessage("Usage: /crash <user>");
+                    return;
+                }
+                args = command.split("^.*? ");
+                chatListenerObject.sendMessage("CRASH " + args[1]);
+                break;
+            case "/giveop":
+                if(args.length != 2){
+                    addInfoMessage("Usage: /giveop <password>");
+                    return;
+                }
+                chatListenerObject.sendMessage("GIVEOP " + args[1]);
+                break;
         }
     }
-    public void end(){
+    private void end(){
         try{
             chatListener.interrupt();
             connection.close();
@@ -270,12 +318,15 @@ public class ChatClient extends JFrame {
             return;
         }
         System.out.println("Server issued command: " + msg);
-        switch (msg){
-            case "GET NAME":
+        switch (msg.split(" ")[0]){
+            case "GETNAME":
                 chatListenerObject.sendMessage(name);
                 break;
-            case "GRANT OP":
+            case "GRANTOP":
                 addInfoMessage("You are now an operator");
+                break;
+            case "REVOKEOP":
+                addInfoMessage("You are no longer an operator");
                 break;
             case "DISCONNECT":
                 end();
@@ -283,9 +334,28 @@ public class ChatClient extends JFrame {
             case "CRASH":
                 System.exit(0);
                 break;
+            case "USERNOTEXIST":
+                addInfoMessage(msg.split("^.*? ")[1] + " is not a valid user");
+                break;
+            case "PRIVATE":
+                String[] msgInfo = msg.split("^.*? ");
+                addInfoMessage(">" + msgInfo[1] + ": " + msgInfo[2]);
+                break;
+            case "NAMECHANGESUB":
+                name = msg.split("^.*? ")[1];
+                break;
+            case "NOPERM":
+                addInfoMessage("Cannot perform action, not enough privilege");
+                break;
+            case "INFO":
+                addInfoMessage(msg.split("^.*? ")[1]);
         }
     }
-    public void addInfoMessage(String msg){
-        chatBoxArea.append(msg + "\r\n");
+    private void addInfoMessage(String msg){
+        chatBoxArea.append(">" + msg + "\r\n");
+    }
+    private String getHistory(boolean up){
+        //TODO: FIX THIS
+        return "";
     }
 }
