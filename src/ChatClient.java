@@ -150,8 +150,12 @@ public class ChatClient extends JFrame {
             @Override
             public void keyReleased(KeyEvent e) {
                 if(e.getExtendedKeyCode() == KeyEvent.VK_UP){
+//                    if(chatInputField.getText().isEmpty())
+//                        curHistory++;
                     chatInputField.setText(getHistory(true));
                 } else if (e.getExtendedKeyCode() == KeyEvent.VK_DOWN){
+//                    if(chatInputField.getText().isEmpty())
+//                        curHistory--;
                     chatInputField.setText(getHistory(false));
                 }
             }
@@ -186,8 +190,10 @@ public class ChatClient extends JFrame {
     }
     private void onClickSend(){
         String text = chatInputField.getText();
-        history.add(text);
-        curHistory++;
+        if(!text.isEmpty())
+            history.add(1,text);
+        else
+            return;
         for(String command : commands)
             if(text.matches("^\\" + command + " .*") || (text.split(" ").length == 1 && text.matches("^\\" + command))) {
                 chatInputField.setText("");
@@ -355,7 +361,19 @@ public class ChatClient extends JFrame {
         chatBoxArea.append(">" + msg + "\r\n");
     }
     private String getHistory(boolean up){
-        //TODO: FIX THIS
-        return "";
+        System.out.println("curHistory: " + curHistory + " history.size(): " + history.size() + " history: " + history);
+        if(up) {
+            if (curHistory > history.size() - 2) {
+                return history.get(curHistory = history.size() - 1);
+            } else {
+                return history.get(++curHistory);
+            }
+        } else {
+            if(curHistory < 1){
+                return history.get(curHistory = 0);
+            } else {
+                return history.get(--curHistory);
+            }
+        }
     }
 }
