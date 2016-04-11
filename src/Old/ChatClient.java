@@ -1,10 +1,11 @@
+package Old;
+
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.Socket;
 import java.util.LinkedList;
-import java.util.ListIterator;
 
 
 //TODO: History
@@ -55,7 +56,7 @@ public class ChatClient extends JFrame {
         JPanel buttonRow = new JPanel();
         JPanel inputButtons = new JPanel();
         JScrollPane textAreaScroller = new JScrollPane(chatBoxArea);
-        name = "ChatClient";
+        name = "Old.ChatClient";
         history = new LinkedList<>();
         curHistory = 0;
         history.add("");
