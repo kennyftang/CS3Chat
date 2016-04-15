@@ -10,6 +10,7 @@ class SetHandleCommand extends NetworkListenerAdapter
 			//SETHANDLE handle
 			//Example: 
 			//		SETHANDLE Tad Cooper
+            ((Client)client).changeGUIName(message.split(message, 2)[1]);
 		}
 	}
 }

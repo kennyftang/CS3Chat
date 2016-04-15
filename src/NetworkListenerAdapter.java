@@ -1,7 +1,7 @@
 
 public abstract class NetworkListenerAdapter implements INetworkListener 
 {
-	public boolean isCommand(String message, String cmd)
+	public boolean 	isCommand(String message, String cmd)
 	{
 		String[] parts = message.split(" ", 2);
 		return parts[0].toUpperCase().equals(cmd.toUpperCase());

@@ -35,6 +35,11 @@ public class ChatClient extends JFrame {
         client.setSize(400, 300);
         client.setVisible(true);
     }
+    private void setUserName(String name){
+        this.name = name;
+        newNameField.setText(name);
+        chatListenerObject.sendMessage("NEWNAME " + name);
+    }
     public ChatClient(){
         //Define components
         commands = new String[] {"/help", "/name", "/connect", "/disconnect", "/msg", "/kick", "/users", "/op", "/deop", "/clear", "/crash", "/giveop"};
@@ -170,11 +175,6 @@ public class ChatClient extends JFrame {
         //End add
         this.pack();
 
-    }
-    private void setUserName(String name){
-        this.name = name;
-        newNameField.setText(name);
-        chatListenerObject.sendMessage("NEWNAME " + name);
     }
     private void connect(String ip, String port){
         try{

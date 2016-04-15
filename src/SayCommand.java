@@ -10,6 +10,8 @@ class SayCommand extends NetworkListenerAdapter
 			//SAY # handle message
 			//Example: 
 			//		SAY 5 MrMayComputer Science!
+			//String[] msg = message.split(message, 3);
+            ((Client)client).out.println(message);
 		}
 	}
 }
