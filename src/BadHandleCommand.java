@@ -11,6 +11,7 @@ class BadHandleCommand extends NetworkListenerAdapter
 			//Example: 
 			//		BADHANDLE Something went wrong, could not set handle
 			((Client)client).gui.pushLocalMessage("Invalid Name");
+			((Client)client).changeGUIName("");
 		}
 	}
 }

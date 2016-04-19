@@ -48,7 +48,8 @@ public class Client implements Runnable, IClient
 
 	@Override
 	public void stop() {
-
+		running = false;
+		out.println("DISCONNECT");
 	}
 
 	@Override

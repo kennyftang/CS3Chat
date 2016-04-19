@@ -108,6 +108,7 @@ public class ClientGUI extends JFrame{
         });
         connectButton.addActionListener((ActionEvent e) -> {
             try{
+                System.out.println("TEST1");
                 pushLocalMessage("Trying on " + hostField.getText() + ":" + portField.getText());
                 connectDialog.dispose();
                 clientObject = new Client(hostField.getText(), Integer.valueOf(portField.getText()), this);
@@ -190,10 +191,10 @@ public class ClientGUI extends JFrame{
         }
     }
     public void pushLocalMessage(String message){
-        chatBoxArea.append("LOCAL>" + message);
+        chatBoxArea.append("LOCAL> " + message + "\r\n");
     }
-    private void pushLiteralMessage(String message){
-        chatBoxArea.append(message);
+    public void pushLiteralMessage(String message){
+        chatBoxArea.append(message + "\r\n");
     }
     public void setName(String name){
         this.name = name;
